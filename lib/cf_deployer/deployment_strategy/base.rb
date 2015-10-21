@@ -73,14 +73,27 @@ module CfDeployer
       end
 
       def warm_up_inactive_stack
-        group_ids(inactive_stack).each_with_index do |id, index|
-          asg_driver(id).warm_up get_desired(id, index)
+        group_ids(inactive_stack).each do |inactive_id|
+          min_max_desired = calculate_min_max_desired(inactive_id)
+          asg_driver(inactive_id).warm_up min_max_desired[:desired]
         end
       end
 
-      def get_desired(id, index)
-        group_id =  active_stack ? group_ids(active_stack)[index] : id
-        asg_driver(group_id).describe[:desired]
+      def calculate_min_max_desired(id)
+        group_id = active_equivalent_for(id) || id
+        asg_driver(group_id).describe
+      end
+
+      def active_equivalent_for(inactive_id)
+        inactive_name = names_ids_for(inactive_stack).key(inactive_id)
+        names_ids_for(active_stack)[inactive_name]
+      end
+
+      def name_ids_for stack
+        (asg_name_outputs || []).inject({}) do |memo, name|
+          memo[name] = stack.find_output(name)
+          memo
+        end
       end
 
       def group_ids(stack)

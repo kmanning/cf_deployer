@@ -53,9 +53,9 @@ module CfDeployer
       end
 
       def warm_up_cooled_stack
-        group_ids(active_stack).each_with_index do |id, index|
-          min_max_desired = asg_driver(id).describe
-          asg_driver(group_ids(inactive_stack)[index]).warm_up_cooled_group min_max_desired
+        group_ids(inactive_stack).each do |inactive_id|
+          min_max_desired = calculate_min_max_desired(inactive_id)
+          asg_driver(inactive_id).warm_up_cooled_group min_max_desired
         end
       end
 
